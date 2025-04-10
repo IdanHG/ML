@@ -256,18 +256,16 @@ def gradient_descent_stop_condition(X, y, theta, eta, max_iter, epsilon=1e-8):
         errors = predictions - y
         gradient = (1 / n) * X.T.dot(errors)
 
-        # Clip gradient values to prevent extreme updates
-        max_value = 1e10  # Some large but safe value
-        gradient = np.clip(gradient, -max_value, max_value)
-
-        #check if gradient diverges
+        # Check if gradient contains extreme values
         if np.any(np.isinf(gradient)) or np.any(np.isnan(gradient)):
-            print(f"Warning: divergent gradient encountered at iteration {iter} with eta: {eta}")
+            print(f"Warning: Unstable gradient encountered at iteration {iter}")
+            J_history.append(float('inf'))  # Record that gradient diverged
             break
 
         # update in the counter direction of the gradient
         theta = theta - eta * gradient
 
+        max_value = 1e10
         # Clip theta values if they become too extreme
         theta = np.clip(theta, -max_value, max_value)
 
