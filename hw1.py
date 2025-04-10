@@ -171,6 +171,7 @@ def gradient_descent(X, y, theta, eta, num_iters):
         loss = compute_loss(X, y, theta)
 
         if np.isinf(loss) or np.isnan(loss):
+            J_history.append(float('inf'))
             break
 
         #log losses
@@ -246,9 +247,6 @@ def gradient_descent_stop_condition(X, y, theta, eta, max_iter, epsilon=1e-8):
 
     n = X.shape[0]
 
-    X,y = preprocess(X, y)
-    X = apply_bias_trick(X)
-
     prev_J = compute_loss(X, y, theta)
     J_history.append(prev_J)
 
@@ -257,15 +255,27 @@ def gradient_descent_stop_condition(X, y, theta, eta, max_iter, epsilon=1e-8):
         predictions = np.dot(X, theta)
         errors = predictions - y
         gradient = (1 / n) * X.T.dot(errors)
-        # gradient = (1 / n) * X.T.dot(errors).sum(axis=0)
+
+        # Clip gradient values to prevent extreme updates
+        max_value = 1e10  # Some large but safe value
+        gradient = np.clip(gradient, -max_value, max_value)
+
+        #check if gradient diverges
+        if np.any(np.isinf(gradient)) or np.any(np.isnan(gradient)):
+            print(f"Warning: divergent gradient encountered at iteration {iter} with eta: {eta}")
+            break
 
         # update in the counter direction of the gradient
         theta = theta - eta * gradient
+
+        # Clip theta values if they become too extreme
+        theta = np.clip(theta, -max_value, max_value)
 
         cur_J = compute_loss(X, y, theta)
 
         # #avoid performing operations on 'inf' or 'nan'
         if np.isinf(cur_J) or np.isnan(cur_J):
+            J_history.append(float('inf'))
             break
 
         J_history.append(cur_J)
@@ -344,7 +354,7 @@ def forward_feature_selection(X_train, y_train, X_val, y_val, best_eta, iteratio
     X_train = apply_bias_trick(X_train)
     X_val = apply_bias_trick(X_val)
     M_complement = set(range(1, X_train.shape[1]))
-    j_star = 0
+    j_star = None
 
     while len(selected_features) < 5 and M_complement:
         min_loss = float('inf')
@@ -353,16 +363,23 @@ def forward_feature_selection(X_train, y_train, X_val, y_val, best_eta, iteratio
             #train on M ∪ j (make sure not to forget to include the bias column!)
             slice = [0] + selected_features + [j]
             cur_train = X_train[:, slice]
-            theta, _ = gradient_descent_stop_condition(cur_train, y_train, np.random.rand(cur_train.shape[1]), best_eta, iterations)
+            theta, _ = gradient_descent_stop_condition(cur_train, y_train, (np.random.rand(cur_train.shape[1]) * 0.01), best_eta, iterations)
             cur_loss = compute_loss(X_val[:, slice], y_val, theta)
 
             if cur_loss < min_loss:
                 min_loss = cur_loss
                 j_star = j
 
+
         #M = M ∪ j_star
-        selected_features.append(j_star)
-        M_complement = M_complement.difference({j_star})
+        if j_star is not None:
+            selected_features.append(j_star)
+            M_complement = M_complement.difference({j_star})
+
+        else:
+            # No feature was successfully computed.
+            print("Warning: No feature could be successfully evaluated. Stopping selection.")
+            break
 
     ###########################################################################
     #                             END OF YOUR CODE                            #
