@@ -385,7 +385,28 @@ def create_square_features(df):
     ###########################################################################
     # TODO: Implement the function to add polynomial features                 #
     ###########################################################################
-    pass
+    if df is None or len(df_poly.columns) == 0:
+        return df_poly
+
+    df_poly = df.copy()
+    features = list(df.columns)
+
+    # Dictionary to hold new features
+    new_features = {}
+
+    for i in range(len(features)):
+        featureI = features[i]
+        new_features[featureI + "^2"] = df[featureI] ** 2
+
+        for j in range(i + 1, len(features)):
+            featureJ = features[j]
+            new_features[featureI + "*" + featureJ] = df[featureI] * df[featureJ]
+
+    # Convert dictionary to DataFrame
+    new_features_df = pd.DataFrame(new_features)
+
+    # Concatenate all at once
+    df_poly = pd.concat([df_poly, new_features_df], axis=1)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
