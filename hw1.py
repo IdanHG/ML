@@ -122,7 +122,6 @@ def compute_loss(X, y, theta):
     ###########################################################################
     return J
 
-# TODO: understand if preproccess is needed
 def gradient_descent(X, y, theta, eta, num_iters):
     """
     Learn the parameters of the model using gradient descent using 
@@ -164,9 +163,18 @@ def gradient_descent(X, y, theta, eta, num_iters):
         errors = predictions - y
         gradient = (1 / n) * X.T.dot(errors)
         # gradient = (1 / n) * X.T.dot(errors).sum(axis=0)
+        # Check if gradient contains extreme values
+        if np.any(np.isinf(gradient)) or np.any(np.isnan(gradient)):
+            print(f"Warning: Unstable gradient encountered at iteration {iter}")
+            J_history.append(float('inf'))  # avoid computing loss and record that gradient diverged
+            break
 
-        #update in the counter direction of the gradient
-        theta =  theta - eta * gradient
+        # update in the counter direction of the gradient
+        theta = theta - eta * gradient
+
+        max_value = 1e10
+        # Clip theta values if they become too extreme
+        theta = np.clip(theta, -max_value, max_value)
 
         loss = compute_loss(X, y, theta)
 
@@ -181,7 +189,7 @@ def gradient_descent(X, y, theta, eta, num_iters):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return theta, J_history
-# TODO: understand if preproccess is needed
+
 def compute_pinv(X, y):
     """
     Compute the optimal values of the parameters using the pseudoinverse
@@ -216,7 +224,7 @@ def compute_pinv(X, y):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return pinv_theta
-# TODO: understand if preproccess is needed
+
 def gradient_descent_stop_condition(X, y, theta, eta, max_iter, epsilon=1e-8):
     """
     Learn the parameters of your model using the training set, but stop 
@@ -259,7 +267,7 @@ def gradient_descent_stop_condition(X, y, theta, eta, max_iter, epsilon=1e-8):
         # Check if gradient contains extreme values
         if np.any(np.isinf(gradient)) or np.any(np.isnan(gradient)):
             print(f"Warning: Unstable gradient encountered at iteration {iter}")
-            J_history.append(float('inf'))  # Record that gradient diverged
+            J_history.append(float('inf'))  # avoid computing loss and record that gradient diverged
             break
 
         # update in the counter direction of the gradient
@@ -271,7 +279,7 @@ def gradient_descent_stop_condition(X, y, theta, eta, max_iter, epsilon=1e-8):
 
         cur_J = compute_loss(X, y, theta)
 
-        # #avoid performing operations on 'inf' or 'nan'
+        #avoid performing operations on 'inf' or 'nan'
         if np.isinf(cur_J) or np.isnan(cur_J):
             J_history.append(float('inf'))
             break
@@ -450,7 +458,6 @@ def arg_reshape(*args):
 
     # Return as tuple (to match the original function's return style)
     return tuple(reshaped_args)
-
 
 def validateInput(X, y, theta=None):
     """
