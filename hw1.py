@@ -76,6 +76,8 @@ def apply_bias_trick(X):
     ###########################################################################
     if X is None or X.size == 0:
         raise ValueError('X cannot be None or empty.')
+    if not isinstance(X, np.ndarray):
+        raise TypeError('X must be a numpy array.')
 
     #make it 2D in case it is 1D
     X = arg_reshape(X)[0]
@@ -153,9 +155,6 @@ def gradient_descent(X, y, theta, eta, num_iters):
     if num_iters <= 0 or eta <= 0:
         raise ValueError('eta and num_iters must be a positive numbers.')
     n = X.shape[0]
-
-    # X, y = preprocess(X, y)
-    # X = apply_bias_trick(X)
 
     for iter in range(num_iters):
         #compute gradient
@@ -250,6 +249,9 @@ def gradient_descent_stop_condition(X, y, theta, eta, max_iter, epsilon=1e-8):
     # TODO: Implement the gradient descent with stop condition optimization algorithm.  #
     ###########################################################################
     validateInput(X, y, theta)
+    if not isinstance(max_iter, int) or not isinstance(epsilon, float) or not isinstance(eta, (float,int)):
+        raise ValueError('max_iter must be an integer and epsilon must be float and eta must be a float or int')
+
     if max_iter <= 0 or eta <= 0 or epsilon <= 0:
         raise ValueError('eta, max_iter and epsilon must be a positive numbers.')
 
